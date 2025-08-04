@@ -1,8 +1,8 @@
 ZuluSCSI™ Firmware
 =================
 
-This fork is to implement a Kiosk mode
---------------------------------------
+This fork implements a Kiosk mode
+---------------------------------
 The Kiosk mode is destined for vintage computer museums or other demonstration setups, where the machines can be used by visitors but should be restored to pristine state easily.
 
 This is a simple implementation of the concept that overrides at startup all disks that have a corresponding ".ori" image of the same size.
