@@ -1249,9 +1249,9 @@ static void kiosk_restore_images()
   }
 
   FsFile file;
-  char filename[64];
-  char ori_name[64];
-  char hda_name[64];
+  char filename[MAX_FILE_PATH + 1];
+  char ori_name[MAX_FILE_PATH + 1];
+  char img_name[MAX_FILE_PATH + 1];
   int restored_count = 0;
 
   // Scan for .ori files
@@ -1268,15 +1268,15 @@ static void kiosk_restore_images()
         ori_name[sizeof(ori_name) - 1] = '\0';
 
         // Generate target filename by removing .ori extension
-        strncpy(hda_name, filename, len - 4); // Remove .ori
-        hda_name[len - 4] = '\0';
+        strncpy(img_name, filename, len - 4); // Remove .ori
+        img_name[len - 4] = '\0';
 
         // Get .ori file size
         uint64_t ori_size = file.size();
         logmsg("Kiosk restore: Found ", ori_name, " (", (int)(ori_size >> 20), " MB)");
 
         // Check if target file already exists with correct size
-        FsFile existing_target = SD.open(hda_name, O_RDONLY);
+        FsFile existing_target = SD.open(img_name, O_RDONLY);
         if (existing_target.isOpen())
         {
           uint64_t target_size = existing_target.size();
@@ -1284,7 +1284,7 @@ static void kiosk_restore_images()
 
           if (target_size != ori_size)
           {
-            logmsg("Kiosk restore: ERROR - ", hda_name, " exists but wrong size (", (int)(target_size >> 20), " MB vs ", (int)(ori_size >> 20), " MB), skipping");
+            logmsg("Kiosk restore: ERROR - ", img_name, " exists but wrong size (", (int)(target_size >> 20), " MB vs ", (int)(ori_size >> 20), " MB), skipping");
             file.close();
             continue;
           }
@@ -1292,33 +1292,45 @@ static void kiosk_restore_images()
         }
         else
         {
-          logmsg("Kiosk restore: ERROR - Target file ", hda_name, " does not exist, skipping");
+          logmsg("Kiosk restore: ERROR - Target file ", img_name, " does not exist, skipping");
           file.close();
           continue;
         }
 
-        // Copy .ori to .hda
-        logmsg("Kiosk restore: Copying ", ori_name, " to ", hda_name, "...");
+        // Copy .ori to image file
+        logmsg("Kiosk restore: Copying ", ori_name, " to ", img_name, "...");
         uint32_t copy_start_time = millis();
 
-        FsFile hda_dest = SD.open(hda_name, O_WRONLY | O_CREAT | O_TRUNC);
-        if (!hda_dest.isOpen())
+        FsFile img_dest = SD.open(img_name, O_WRONLY | O_CREAT | O_TRUNC);
+        if (!img_dest.isOpen())
         {
-          logmsg("Kiosk restore: ERROR - Failed to create ", hda_name);
+          logmsg("Kiosk restore: ERROR - Failed to create ", img_name);
           file.close();
           continue;
         }
 
-        // Copy file in chunks
-        const size_t BUFFER_SIZE = 8192;
-        uint8_t *buffer = (uint8_t *)malloc(BUFFER_SIZE);
+        // Allocate the largest possible buffer, starting at 256KB and halving on failure
+        size_t BUFFER_SIZE = 256 * 1024; // Start with 256KB
+        uint8_t *buffer = nullptr;
+
+        while (BUFFER_SIZE >= 512 && !buffer) // Don't go below 512 bytes
+        {
+          buffer = (uint8_t *)malloc(BUFFER_SIZE);
+          if (!buffer)
+          {
+            BUFFER_SIZE /= 2; // Halve the buffer size and try again
+          }
+        }
+
         if (!buffer)
         {
           logmsg("Kiosk restore: ERROR - Failed to allocate copy buffer");
-          hda_dest.close();
+          img_dest.close();
           file.close();
           continue;
         }
+
+        logmsg("Kiosk restore: Using buffer size: ", (int)(BUFFER_SIZE / 1024), " KB");
 
         uint64_t bytes_copied = 0;
         uint32_t last_progress_mb = 0;
@@ -1337,7 +1349,7 @@ static void kiosk_restore_images()
             break;
           }
 
-          size_t bytes_written = hda_dest.write(buffer, bytes_read);
+          size_t bytes_written = img_dest.write(buffer, bytes_read);
           if (bytes_written != bytes_read)
           {
             logmsg("Kiosk restore: ERROR - Write failed at offset ", (int)(bytes_copied >> 20), " MB");
@@ -1361,7 +1373,7 @@ static void kiosk_restore_images()
         }
 
         free(buffer);
-        hda_dest.close();
+        img_dest.close();
         LED_OFF();
 
         uint32_t copy_time_ms = millis() - copy_start_time;
@@ -1369,14 +1381,12 @@ static void kiosk_restore_images()
 
         if (copy_success && bytes_copied == ori_size)
         {
-          logmsg("Kiosk restore: Successfully restored ", hda_name, " (", (int)(ori_size >> 20), " MB) in ", (int)copy_time_ms, " ms, ", copy_speed_kbps, " kB/s");
+          logmsg("Kiosk restore: Successfully restored ", img_name, " (", (int)(ori_size >> 20), " MB) in ", (int)copy_time_ms, " ms, ", copy_speed_kbps, " kB/s");
           restored_count++;
         }
         else
         {
-          logmsg("Kiosk restore: ERROR - Failed to restore ", hda_name, " after ", (int)copy_time_ms, " ms");
-          // Clean up partial file
-          SD.remove(hda_name);
+          logmsg("Kiosk restore: ERROR - Failed to restore ", img_name, " after ", (int)copy_time_ms, " ms");
         }
       }
     }
@@ -1387,9 +1397,5 @@ static void kiosk_restore_images()
   if (restored_count > 0)
   {
     logmsg("Kiosk restore: Completed - restored ", restored_count, " disk image(s)");
-  }
-  else
-  {
-    logmsg("Kiosk restore: No images needed restoration");
   }
 }
