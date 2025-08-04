@@ -16,7 +16,7 @@ Take the image that you want to be restored at each boot.
 Duplicate it.
 Add an ``.ori`` extension, for *original*.
 At startup, this original file will be copied onto the file.
-(``HD10_512.hda.ori`` -> ``HD10_512.hda``)
+(``HD10_512.hda.ori`` -> ``HD10_512.hda``). The original file *must* exist and have the *exact same size*.
 Rebooting the machine will not restore the file, you need to physically power-cycle the Zulu.
 
 Hard Drive & ISO image files
