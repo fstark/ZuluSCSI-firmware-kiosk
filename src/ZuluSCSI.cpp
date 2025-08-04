@@ -1236,7 +1236,7 @@ extern "C" void zuluscsi_main_loop(void)
   }
 }
 
-// Kiosk mode: Restore .hda files from .ori backups for museum installations
+// Kiosk mode: Restore image files from .ori backups for museum installations
 static void kiosk_restore_images()
 {
   logmsg("Kiosk restore: Checking for .ori backup files to restore");
@@ -1301,7 +1301,7 @@ static void kiosk_restore_images()
         logmsg("Kiosk restore: Copying ", ori_name, " to ", img_name, "...");
         uint32_t copy_start_time = millis();
 
-        FsFile img_dest = SD.open(img_name, O_WRONLY | O_CREAT | O_TRUNC);
+        FsFile img_dest = SD.open(img_name, O_WRONLY);
         if (!img_dest.isOpen())
         {
           logmsg("Kiosk restore: ERROR - Failed to create ", img_name);
@@ -1309,18 +1309,9 @@ static void kiosk_restore_images()
           continue;
         }
 
-        // Allocate the largest possible buffer, starting at 256KB and halving on failure
-        size_t BUFFER_SIZE = 256 * 1024; // Start with 256KB
-        uint8_t *buffer = nullptr;
-
-        while (BUFFER_SIZE >= 512 && !buffer) // Don't go below 512 bytes
-        {
-          buffer = (uint8_t *)malloc(BUFFER_SIZE);
-          if (!buffer)
-          {
-            BUFFER_SIZE /= 2; // Halve the buffer size and try again
-          }
-        }
+        // Allocate a fixed 8KB buffer
+        size_t BUFFER_SIZE = 8 * 1024;
+        uint8_t *buffer = (uint8_t *)malloc(BUFFER_SIZE);
 
         if (!buffer)
         {
