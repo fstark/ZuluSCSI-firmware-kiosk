@@ -1,0 +1,31 @@
+# ZuluSCSI kiosk Firmware Project Rules
+
+## Project Context
+This is the ZuluSCSI firmware project - a SCSI device emulator for vintage computers.
+- Uses PlatformIO for embedded C/C++ development
+- Targets multiple microcontroller platforms (RP2040, GD32F205, GD32F450)
+- Platform abstraction layer with separate implementations per MCU
+
+## Aim of this branch
+The aim of this branch is to implement a 'kiosk' mode where the content of disks can be restored at each boot.
+The initial implementation is to look for '.ori' files associated with '.hda' files, and copy them over if they have the same size.
+This is just an initial implementation for testing the concept.
+
+## Code Style & Practices
+- Use logmsg() for always-visible messages, dbgmsg() for debug-only
+- Platform-specific code goes in lib/ZuluSCSI_platform_*/
+- Follow existing naming conventions (snake_case for functions, g_ prefix for globals)
+- Keep platform init code in platform_init() and platform_late_init()
+- Do not make formatting changes to code
+
+## Build System
+- Use PlatformIO commands: `pio run -e <target>` to build
+- Main targets: ZuluSCSI_Pico, ZuluSCSIv1_0, ZULUSCSIv1_4
+- Always activate Python venv first: `source venv/bin/activate`
+- Don't bother with signing, firware are plain /bin files
+
+## When Making Changes
+- Ensure changes work across all relevant platform implementations
+- Test builds after modifications
+- Consider memory constraints (RAM/Flash usage shown in build output)
+- Maintain compatibility with existing hardware variants
