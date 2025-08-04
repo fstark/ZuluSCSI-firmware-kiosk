@@ -73,8 +73,6 @@ bool g_sdcard_present;
 #define SD_SPEED_CLASS_WARN_BELOW 10
 #endif
 
-
-
 /**************/
 /* Log saving */
 /**************/
@@ -136,11 +134,11 @@ void print_sd_info()
 {
   uint64_t size = (uint64_t)SD.vol()->clusterCount() * SD.vol()->bytesPerCluster();
   logmsg("SD card detected, FAT", (int)SD.vol()->fatType(),
-          " volume size: ", (int)(size / 1024 / 1024), " MB");
+         " volume size: ", (int)(size / 1024 / 1024), " MB");
 
   cid_t sd_cid;
 
-  if(SD.card()->readCID(&sd_cid))
+  if (SD.card()->readCID(&sd_cid))
   {
     logmsg("SD MID: ", (uint8_t)sd_cid.mid, ", OID: ", (uint8_t)sd_cid.oid[0], " ", (uint8_t)sd_cid.oid[1]);
 
@@ -153,9 +151,8 @@ void print_sd_info()
   sds_t sds = {0};
   if (SD.card()->readSDS(&sds) && sds.speedClass() < SD_SPEED_CLASS_WARN_BELOW)
   {
-    logmsg("-- WARNING: Your SD Card Speed Class is ", (int)sds.speedClass(), ". Class ", (int) SD_SPEED_CLASS_WARN_BELOW," or better is recommended for best performance.");
+    logmsg("-- WARNING: Your SD Card Speed Class is ", (int)sds.speedClass(), ". Class ", (int)SD_SPEED_CLASS_WARN_BELOW, " or better is recommended for best performance.");
   }
-
 }
 
 /*********************************/
@@ -220,8 +217,10 @@ bool createImage(const char *cmd_filename, char imgname[MAX_FILE_PATH + 1])
   }
 
   // Skip i and B if part of unit
-  if (tolower(*p) == 'i') p++;
-  if (tolower(*p) == 'b') p++;
+  if (tolower(*p) == 'i')
+    p++;
+  if (tolower(*p) == 'b')
+    p++;
 
   // Skip separator if any
   while (isspace(*p) || *p == '-' || *p == '_')
@@ -270,11 +269,19 @@ bool createImage(const char *cmd_filename, char imgname[MAX_FILE_PATH + 1])
   uint64_t remain = size;
   while (remain > 0)
   {
-    if (millis() & 128) { LED_ON(); } else { LED_OFF(); }
+    if (millis() & 128)
+    {
+      LED_ON();
+    }
+    else
+    {
+      LED_OFF();
+    }
     platform_reset_watchdog();
 
     size_t to_write = sizeof(scsiDev.data);
-    if (to_write > remain) to_write = remain;
+    if (to_write > remain)
+      to_write = remain;
     if (file.write(scsiDev.data, to_write) != to_write)
     {
       logmsg("---- File writing to '", imgname, "' failed with ", (int)remain, " bytes remaining");
@@ -373,13 +380,14 @@ bool findHDDImages()
       }
     }
 
-    char name[MAX_FILE_PATH+1];
-    if(!file.isDir() || scsiDiskFolderContainsCueSheet(&file) || scsiDiskFolderIsTapeFolder(&file)) {
-      file.getName(name, MAX_FILE_PATH+1);
+    char name[MAX_FILE_PATH + 1];
+    if (!file.isDir() || scsiDiskFolderContainsCueSheet(&file) || scsiDiskFolderIsTapeFolder(&file))
+    {
+      file.getName(name, MAX_FILE_PATH + 1);
       file.close();
 
       // Special filename for clearing any previously programmed ROM drive
-      if(strcasecmp(name, "CLEAR_ROM") == 0)
+      if (strcasecmp(name, "CLEAR_ROM") == 0)
       {
         logmsg("-- Special filename: '", name, "'");
         romDriveClear();
@@ -390,7 +398,7 @@ bool findHDDImages()
       if (strncasecmp(name, CREATEFILE, strlen(CREATEFILE)) == 0)
       {
         logmsg("-- Special filename: '", name, "'");
-        char imgname[MAX_FILE_PATH+1];
+        char imgname[MAX_FILE_PATH + 1];
         if (createImage(name, imgname))
         {
           // Created new image file, use its name instead of the name of the command file
@@ -412,7 +420,7 @@ bool findHDDImages()
 
       if (is_hd || is_cd || is_fd || is_mo || is_re || is_tp || is_zp
 #ifdef ZULUSCSI_NETWORK
-        || is_ne
+          || is_ne
 #endif // ZULUSCSI_NETWORK
       )
       {
@@ -425,18 +433,20 @@ bool findHDDImages()
         }
 
         // skip file if the name indicates it is not a valid image container
-        if (!is_romdrive && !scsiDiskFilenameValid(name)) continue;
+        if (!is_romdrive && !scsiDiskFilenameValid(name))
+          continue;
 
         // Defaults for Hard Disks
-        int id  = 1; // 0 and 3 are common in Macs for physical HD and CD, so avoid them.
+        int id = 1; // 0 and 3 are common in Macs for physical HD and CD, so avoid them.
         int lun = 0;
 
         // Parse SCSI device ID
         int file_name_length = strlen(name);
-        if(file_name_length > 2) { // HD[N]
+        if (file_name_length > 2)
+        { // HD[N]
           int tmp_id = name[HDIMG_ID_POS] - '0';
 
-          if(tmp_id > -1 && tmp_id < 8)
+          if (tmp_id > -1 && tmp_id < 8)
           {
             id = tmp_id; // If valid id, set it, else use default
             use_prefix = true;
@@ -448,10 +458,12 @@ bool findHDDImages()
         }
 
         // Parse SCSI LUN number
-        if(file_name_length > 3) { // HD0[N]
+        if (file_name_length > 3)
+        { // HD0[N]
           int tmp_lun = name[HDIMG_LUN_POS] - '0';
 
-          if(tmp_lun > -1 && tmp_lun < NUM_SCSILUN) {
+          if (tmp_lun > -1 && tmp_lun < NUM_SCSILUN)
+          {
             lun = tmp_lun; // If valid id, set it, else use default
           }
         }
@@ -459,7 +471,8 @@ bool findHDDImages()
         // Add the directory name to get the full file path
         char fullname[MAX_FILE_PATH * 2 + 2] = {0};
         strncpy(fullname, imgdir, MAX_FILE_PATH);
-        if (fullname[strlen(fullname) - 1] != '/') strcat(fullname, "/");
+        if (fullname[strlen(fullname) - 1] != '/')
+          strcat(fullname, "/");
         strcat(fullname, name);
 
         // Check whether this SCSI ID has been configured yet
@@ -472,7 +485,7 @@ bool findHDDImages()
         // set the default block size now that we know the device type
         if (g_scsi_settings.getDevice(id)->blockSize == 0)
         {
-          g_scsi_settings.getDevice(id)->blockSize = is_cd ?  DEFAULT_BLOCKSIZE_OPTICAL : DEFAULT_BLOCKSIZE;
+          g_scsi_settings.getDevice(id)->blockSize = is_cd ? DEFAULT_BLOCKSIZE_OPTICAL : DEFAULT_BLOCKSIZE;
         }
         int blk = getBlockSize(name, id);
 
@@ -483,18 +496,25 @@ bool findHDDImages()
           continue;
         }
 #endif // ZULUSCSI_NETWORK
-        // Type mapping based on filename.
-        // If type is FIXED, the type can still be overridden in .ini file.
+       // Type mapping based on filename.
+       // If type is FIXED, the type can still be overridden in .ini file.
         S2S_CFG_TYPE type = S2S_CFG_FIXED;
-        if (is_cd) type = S2S_CFG_OPTICAL;
-        if (is_fd) type = S2S_CFG_FLOPPY_14MB;
-        if (is_mo) type = S2S_CFG_MO;
+        if (is_cd)
+          type = S2S_CFG_OPTICAL;
+        if (is_fd)
+          type = S2S_CFG_FLOPPY_14MB;
+        if (is_mo)
+          type = S2S_CFG_MO;
 #ifdef ZULUSCSI_NETWORK
-        if (is_ne) type = S2S_CFG_NETWORK;
+        if (is_ne)
+          type = S2S_CFG_NETWORK;
 #endif // ZULUSCSI_NETWORK
-        if (is_re) type = S2S_CFG_REMOVABLE;
-        if (is_tp) type = S2S_CFG_SEQUENTIAL;
-        if (is_zp) type = S2S_CFG_ZIP100;
+        if (is_re)
+          type = S2S_CFG_REMOVABLE;
+        if (is_tp)
+          type = S2S_CFG_SEQUENTIAL;
+        if (is_zp)
+          type = S2S_CFG_ZIP100;
 
         g_scsi_settings.initDevice(id & 7, type);
         // Open the image file
@@ -507,16 +527,17 @@ bool findHDDImages()
             foundImage = true;
           }
         }
-        else if(id < NUM_SCSIID && lun < NUM_SCSILUN) {
+        else if (id < NUM_SCSIID && lun < NUM_SCSILUN)
+        {
           logmsg("-- Opening ", fullname, " for id:", id, " lun:", lun);
 
           if (g_scsi_settings.getDevicePreset(id) != DEV_PRESET_NONE)
           {
-              logmsg("---- Using device preset: ", g_scsi_settings.getDevicePresetName(id));
+            logmsg("---- Using device preset: ", g_scsi_settings.getDevicePresetName(id));
           }
 
           imageReady = scsiDiskOpenHDDImage(id, fullname, lun, blk, type, use_prefix);
-          if(imageReady)
+          if (imageReady)
           {
             foundImage = true;
           }
@@ -524,14 +545,17 @@ bool findHDDImages()
           {
             logmsg("---- Failed to load image");
           }
-        } else {
+        }
+        else
+        {
           logmsg("-- Invalid lun or id for image ", fullname);
         }
       }
     }
   }
 
-  if(usedDefaultId > 0) {
+  if (usedDefaultId > 0)
+  {
     logmsg("Some images did not specify a SCSI ID. Last file will be used at ID ", usedDefaultId);
   }
   root.close();
@@ -541,7 +565,7 @@ bool findHDDImages()
   // Print SCSI drive map
   for (int i = 0; i < NUM_SCSIID; i++)
   {
-    const S2S_TargetCfg* cfg = s2s_getConfigByIndex(i);
+    const S2S_TargetCfg *cfg = s2s_getConfigByIndex(i);
 
     if (cfg && (cfg->scsiId & S2S_CFG_TARGET_ENABLED))
     {
@@ -550,36 +574,35 @@ bool findHDDImages()
       if (cfg->deviceType == S2S_CFG_NETWORK)
       {
         logmsg("SCSI ID: ", (int)(cfg->scsiId & 7),
-              ", Type: ", (int)cfg->deviceType,
-              ", Quirks: ", (int)cfg->quirks);
+               ", Type: ", (int)cfg->deviceType,
+               ", Quirks: ", (int)cfg->quirks);
       }
       else
       {
         logmsg("SCSI ID: ", (int)(cfg->scsiId & S2S_CFG_TARGET_ID_BITS),
-              ", BlockSize: ", (int)cfg->bytesPerSector,
-              ", Type: ", (int)cfg->deviceType,
-              ", Quirks: ", (int)cfg->quirks,
-              ", Size: ", capacity_kB, "kB",
-              typeIsRemovable((S2S_CFG_TYPE)cfg->deviceType) ? ", Removable" : ""
-              );
-       }
+               ", BlockSize: ", (int)cfg->bytesPerSector,
+               ", Type: ", (int)cfg->deviceType,
+               ", Quirks: ", (int)cfg->quirks,
+               ", Size: ", capacity_kB, "kB",
+               typeIsRemovable((S2S_CFG_TYPE)cfg->deviceType) ? ", Removable" : "");
+      }
     }
   }
   // count the removable drives and drive with eject enabled
   for (uint8_t id = 0; id < S2S_MAX_TARGETS; id++)
   {
-    const S2S_TargetCfg* cfg = s2s_getConfigByIndex(id);
-    if (cfg  && (cfg->scsiId & S2S_CFG_TARGET_ENABLED ))
+    const S2S_TargetCfg *cfg = s2s_getConfigByIndex(id);
+    if (cfg && (cfg->scsiId & S2S_CFG_TARGET_ENABLED))
     {
-       if (typeIsRemovable((S2S_CFG_TYPE)cfg->deviceType))
+      if (typeIsRemovable((S2S_CFG_TYPE)cfg->deviceType))
+      {
+        removable_count++;
+        last_removable_device = id;
+        if (getEjectButton(id) != 0)
         {
-          removable_count++;
-          last_removable_device = id;
-          if ( getEjectButton(id) !=0 )
-          {
-            eject_btn_set++;
-          }
+          eject_btn_set++;
         }
+      }
     }
   }
 
@@ -590,7 +613,7 @@ bool findHDDImages()
       logmsg("Eject set to device with ID: ", last_removable_device);
     else if (eject_btn_set == 0 && !platform_has_phy_eject_button())
     {
-      logmsg("Found 1 removable device, to set an eject button see EjectButton in the '", CONFIGFILE,"', or the http://zuluscsi.com/manual");
+      logmsg("Found 1 removable device, to set an eject button see EjectButton in the '", CONFIGFILE, "', or the http://zuluscsi.com/manual");
     }
   }
   else if (removable_count > 1)
@@ -605,18 +628,18 @@ bool findHDDImages()
 
       for (uint8_t id = 0; id < S2S_MAX_TARGETS; id++)
       {
-        if( getEjectButton(id) != 0)
+        if (getEjectButton(id) != 0)
         {
-          logmsg("-- SCSI ID: ", (int)id, " type: ", (int) s2s_getConfigById(id)->deviceType, " button mask: ", getEjectButton(id));
+          logmsg("-- SCSI ID: ", (int)id, " type: ", (int)s2s_getConfigById(id)->deviceType, " button mask: ", getEjectButton(id));
         }
       }
     }
     else
     {
       if (platform_has_phy_eject_button())
-        logmsg("Other removable devices found, to set an eject button for different SCSI IDs see EjectButton in the '", CONFIGFILE,"', or the http://zuluscsi.com/manual");
+        logmsg("Other removable devices found, to set an eject button for different SCSI IDs see EjectButton in the '", CONFIGFILE, "', or the http://zuluscsi.com/manual");
       else
-        logmsg("Multiple removable devices, to set an eject button see EjectButton in the '", CONFIGFILE,"', or the http://zuluscsi.com/manual");
+        logmsg("Multiple removable devices, to set an eject button see EjectButton in the '", CONFIGFILE, "', or the http://zuluscsi.com/manual");
     }
   }
   return foundImage;
@@ -653,12 +676,12 @@ static bool mountSDCard()
   if (SD.begin(SD_CONFIG))
   {
 #if defined(HAS_SDIO_CLASS) && HAS_SDIO_CLASS
-    int speed = ((SdioCard*)SD.card())->kHzSdClk();
+    int speed = ((SdioCard *)SD.card())->kHzSdClk();
     if (speed > 0)
     {
       logmsg("SD card communication speed: ",
-        (int)((speed + 500) / 1000), " MHz, ",
-        (int)((speed + 1000) / 2000), " MB/s");
+             (int)((speed + 500) / 1000), " MHz, ",
+             (int)((speed + 1000) / 2000), " MB/s");
     }
 #endif
 
@@ -671,7 +694,7 @@ static bool mountSDCard()
     return false;
 
   // Try to mount the whole card as FAT (without partition table)
-  if (static_cast<FsVolume*>(&SD)->begin(SD.card(), true, 0))
+  if (static_cast<FsVolume *>(&SD)->begin(SD.card(), true, 0))
     return true;
 
   // Failed to mount FAT filesystem, but card can still be accessed as raw image
@@ -700,7 +723,7 @@ static void reinitSCSI()
     }
     else if (g_scsi_log_mask != 0xFF)
     {
-      dbgmsg("DebugLogMask set to ", (uint8_t) g_scsi_log_mask, " only SCSI ID's matching the bit mask will be logged");
+      dbgmsg("DebugLogMask set to ", (uint8_t)g_scsi_log_mask, " only SCSI ID's matching the bit mask will be logged");
     }
 
     g_log_ignore_busy_free = ini_getbool("SCSI", "DebugIgnoreBusyFree", 0, CONFIGFILE);
@@ -733,9 +756,9 @@ static void reinitSCSI()
     g_scsi_settings.initDevice(scsiId, g_hw_config.device_type());
 
     logmsg("Direct/Raw mode enabled, using hardware switches for configuration");
-    logmsg("-- SCSI ID set via DIP switch to ", (int) g_hw_config.scsi_id());
+    logmsg("-- SCSI ID set via DIP switch to ", (int)g_hw_config.scsi_id());
     char raw_filename[32];
-    uint32_t start =  g_scsi_settings.getDevice(scsiId)->sectorSDBegin;
+    uint32_t start = g_scsi_settings.getDevice(scsiId)->sectorSDBegin;
     uint32_t end = g_scsi_settings.getDevice(scsiId)->sectorSDEnd;
 
     if (start == end && end == 0)
@@ -767,14 +790,14 @@ static void reinitSCSI()
     // Error if there are 0 image files
     if (!scsiDiskCheckAnyImagesConfigured())
     {
-  #ifdef RAW_FALLBACK_ENABLE
+#ifdef RAW_FALLBACK_ENABLE
       logmsg("No images found, enabling RAW fallback partition");
       g_scsi_settings.initDevice(RAW_FALLBACK_SCSI_ID, S2S_CFG_FIXED);
       scsiDiskOpenHDDImage(RAW_FALLBACK_SCSI_ID, "RAW:0:0xFFFFFFFF", 0,
-                          RAW_FALLBACK_BLOCKSIZE);
-  #else
+                           RAW_FALLBACK_BLOCKSIZE);
+#else
       logmsg("No valid image files found!");
-  #endif // RAW_FALLBACK_ENABLE
+#endif // RAW_FALLBACK_ENABLE
       blinkStatus(BLINK_ERROR_NO_IMAGES);
     }
   }
@@ -795,7 +818,6 @@ static void reinitSCSI()
     platform_network_deinit();
   }
 #endif // ZULUSCSI_NETWORK
-
 }
 
 // Alert user that update bin file not used
@@ -820,7 +842,7 @@ static void check_for_unused_update_files()
   }
   if (bin_files_found)
   {
-    logmsg("Please use the ", FIRMWARE_PREFIX ,"*.zip firmware bundle, or the proper .bin or .uf2 file to update the firmware.");
+    logmsg("Please use the ", FIRMWARE_PREFIX, "*.zip firmware bundle, or the proper .bin or .uf2 file to update the firmware.");
     logmsg("See http://zuluscsi.com/manual for more information");
   }
 }
@@ -846,7 +868,7 @@ static void firmware_update()
     file.getName(name, sizeof(name));
     if (strlen(name) + 1 < sizeof(firmware_prefix))
       continue;
-    if ( strncasecmp(firmware_prefix, name, sizeof(firmware_prefix) -1) == 0)
+    if (strncasecmp(firmware_prefix, name, sizeof(firmware_prefix) - 1) == 0)
     {
       break;
     }
@@ -864,7 +886,7 @@ static void firmware_update()
   {
     parsed_length = parser.Parse(buf, bytes_read);
     if (parsed_length == sizeof(buf))
-       continue;
+      continue;
     if (parsed_length >= 0)
     {
       if (!parser.FoundMatch())
@@ -881,13 +903,12 @@ static void firmware_update()
     }
     if (parsed_length < 0)
     {
-      logmsg("Filename character length of ", (int)target_filename_length , " with a prefix of ", FIRMWARE_NAME_PREFIX, " not found in ", name);
+      logmsg("Filename character length of ", (int)target_filename_length, " with a prefix of ", FIRMWARE_NAME_PREFIX, " not found in ", name);
       file.close();
       root.close();
       return;
     }
   }
-
 
   if (parser.FoundMatch())
   {
@@ -902,7 +923,7 @@ static void firmware_update()
     while ((bytes_read = file.read(buf, sizeof(buf))) > 0)
     {
       if (bytes_read > parser.GetCompressedSize() - position)
-        bytes_read =  parser.GetCompressedSize() - position;
+        bytes_read = parser.GetCompressedSize() - position;
       target_firmware.write(buf, bytes_read);
       position += bytes_read;
       if (position >= parser.GetCompressedSize())
@@ -946,26 +967,23 @@ static bool poll_sd_card()
 
 static void init_eject_button()
 {
-  if (platform_has_phy_eject_button() &&  !g_scsi_settings.isEjectButtonSet())
+  if (platform_has_phy_eject_button() && !g_scsi_settings.isEjectButtonSet())
   {
     for (uint8_t i = 0; i < S2S_MAX_TARGETS; i++)
     {
       S2S_CFG_TYPE dev_type = (S2S_CFG_TYPE)scsiDev.targets[i].cfg->deviceType;
-      if (dev_type == S2S_CFG_OPTICAL
-          ||dev_type == S2S_CFG_ZIP100
-          || dev_type == S2S_CFG_REMOVABLE
-          || dev_type == S2S_CFG_FLOPPY_14MB
-          || dev_type == S2S_CFG_MO
-          || dev_type == S2S_CFG_SEQUENTIAL
-      )
+      if (dev_type == S2S_CFG_OPTICAL || dev_type == S2S_CFG_ZIP100 || dev_type == S2S_CFG_REMOVABLE || dev_type == S2S_CFG_FLOPPY_14MB || dev_type == S2S_CFG_MO || dev_type == S2S_CFG_SEQUENTIAL)
       {
-          setEjectButton(i, 1);
-          logmsg("Setting hardware eject button to the first ejectable device on SCSI ID ", (int)i);
-          break;
+        setEjectButton(i, 1);
+        logmsg("Setting hardware eject button to the first ejectable device on SCSI ID ", (int)i);
+        break;
       }
     }
   }
 }
+
+// Forward declaration for kiosk restore function
+static void kiosk_restore_images();
 
 // Place all the setup code that requires the SD card to be initialized here
 // Which is pretty much everything after platform_init and and platform_late_init
@@ -973,17 +991,17 @@ static void zuluscsi_setup_sd_card(bool wait_for_card = true)
 {
   g_sdcard_present = mountSDCard();
 
-  if(!g_sdcard_present)
+  if (!g_sdcard_present)
   {
     if (SD.sdErrorCode() == platform_no_sd_card_on_init_error_code())
     {
-  #ifdef PLATFORM_HAS_INITIATOR_MODE
+#ifdef PLATFORM_HAS_INITIATOR_MODE
       if (platform_is_initiator_mode_enabled())
       {
         logmsg("No SD card detected, imaging to SD card not possible");
       }
       else
-  #endif
+#endif
       {
         logmsg("No SD card detected, please check SD card slot to make sure it is in correctly");
       }
@@ -1022,11 +1040,8 @@ static void zuluscsi_setup_sd_card(bool wait_for_card = true)
   check_for_unused_update_files();
   firmware_update();
 
-
-
   if (g_sdcard_present)
   {
-
 
     if (SD.clusterCount() == 0)
     {
@@ -1040,9 +1055,9 @@ static void zuluscsi_setup_sd_card(bool wait_for_card = true)
     scsi_system_settings_t *cfg = g_scsi_settings.initSystem(presetName);
 
 #ifdef RECLOCKING_SUPPORTED
-    zuluscsi_speed_grade_t speed_grade = (zuluscsi_speed_grade_t) g_scsi_settings.getSystem()->speedGrade;
+    zuluscsi_speed_grade_t speed_grade = (zuluscsi_speed_grade_t)g_scsi_settings.getSystem()->speedGrade;
     if (speed_grade != zuluscsi_speed_grade_t::SPEED_GRADE_DEFAULT)
-    { 
+    {
       logmsg("Speed grade set to ", g_scsi_settings.getSpeedGradeString(), " reclocking system");
       if (platform_reclock(speed_grade))
       {
@@ -1065,6 +1080,7 @@ static void zuluscsi_setup_sd_card(bool wait_for_card = true)
       delay(boot_delay_ms);
     }
     platform_post_sd_card_init();
+    kiosk_restore_images();
     reinitSCSI();
 
     boot_delay_ms = cfg->initPostDelay;
@@ -1073,7 +1089,6 @@ static void zuluscsi_setup_sd_card(bool wait_for_card = true)
       logmsg("Post SCSI init boot delay in millis: ", boot_delay_ms);
       delay(boot_delay_ms);
     }
-
   }
 
   if (g_sdcard_present)
@@ -1097,6 +1112,7 @@ static void zuluscsi_setup_sd_card(bool wait_for_card = true)
 extern "C" void zuluscsi_setup(void)
 {
   platform_init();
+  logmsg("Kiosk version");
   platform_late_init();
 
   bool is_initiator = false;
@@ -1110,9 +1126,7 @@ extern "C" void zuluscsi_setup(void)
   static bool check_mass_storage = true;
   if ((check_mass_storage || platform_rebooted_into_mass_storage()) && !is_initiator)
   {
-    if (g_scsi_settings.getSystem()->enableUSBMassStorage
-       || g_scsi_settings.getSystem()->usbMassStoragePresentImages
-    )
+    if (g_scsi_settings.getSystem()->enableUSBMassStorage || g_scsi_settings.getSystem()->usbMassStoragePresentImages)
     {
       check_mass_storage = false;
 
@@ -1126,7 +1140,7 @@ extern "C" void zuluscsi_setup(void)
     }
   }
 #endif
-  logmsg("Clock set to: ", (int) platform_sys_clock_in_hz(), "Hz");
+  logmsg("Clock set to: ", (int)platform_sys_clock_in_hz(), "Hz");
   logmsg("Initialization complete!");
 }
 
@@ -1193,8 +1207,7 @@ extern "C" void zuluscsi_main_loop(void)
     }
   }
 
-  if (!g_sdcard_present && (uint32_t)(millis() - sd_card_check_time) > SDCARD_POLL_INTERVAL
-      && !g_msc_initiator)
+  if (!g_sdcard_present && (uint32_t)(millis() - sd_card_check_time) > SDCARD_POLL_INTERVAL && !g_msc_initiator)
   {
     sd_card_check_time = millis();
 
@@ -1220,5 +1233,163 @@ extern "C" void zuluscsi_main_loop(void)
         platform_poll();
       }
     } while (!g_sdcard_present && !g_romdrive_active && !is_initiator);
+  }
+}
+
+// Kiosk mode: Restore .hda files from .ori backups for museum installations
+static void kiosk_restore_images()
+{
+  logmsg("Kiosk restore: Checking for .ori backup files to restore");
+
+  FsFile root = SD.open("/");
+  if (!root)
+  {
+    logmsg("Kiosk restore: Failed to open root directory");
+    return;
+  }
+
+  FsFile file;
+  char filename[64];
+  char ori_name[64];
+  char hda_name[64];
+  int restored_count = 0;
+
+  // Scan for .ori files
+  while (file.openNext(&root, O_RDONLY))
+  {
+    if (file.isFile() && file.getName(filename, sizeof(filename)))
+    {
+      // Check if this is a .ori file
+      size_t len = strlen(filename);
+      if (len > 4 && strcasecmp(filename + len - 4, ".ori") == 0)
+      {
+        // Store original filename
+        strncpy(ori_name, filename, sizeof(ori_name) - 1);
+        ori_name[sizeof(ori_name) - 1] = '\0';
+
+        // Generate target filename by removing .ori extension
+        strncpy(hda_name, filename, len - 4); // Remove .ori
+        hda_name[len - 4] = '\0';
+
+        // Get .ori file size
+        uint64_t ori_size = file.size();
+        logmsg("Kiosk restore: Found ", ori_name, " (", (int)(ori_size >> 20), " MB)");
+
+        // Check if target file already exists with correct size
+        FsFile existing_target = SD.open(hda_name, O_RDONLY);
+        if (existing_target.isOpen())
+        {
+          uint64_t target_size = existing_target.size();
+          existing_target.close();
+
+          if (target_size != ori_size)
+          {
+            logmsg("Kiosk restore: ERROR - ", hda_name, " exists but wrong size (", (int)(target_size >> 20), " MB vs ", (int)(ori_size >> 20), " MB), skipping");
+            file.close();
+            continue;
+          }
+          // File exists with correct size, proceed with restoration
+        }
+        else
+        {
+          logmsg("Kiosk restore: ERROR - Target file ", hda_name, " does not exist, skipping");
+          file.close();
+          continue;
+        }
+
+        // Copy .ori to .hda
+        logmsg("Kiosk restore: Copying ", ori_name, " to ", hda_name, "...");
+        uint32_t copy_start_time = millis();
+
+        FsFile hda_dest = SD.open(hda_name, O_WRONLY | O_CREAT | O_TRUNC);
+        if (!hda_dest.isOpen())
+        {
+          logmsg("Kiosk restore: ERROR - Failed to create ", hda_name);
+          file.close();
+          continue;
+        }
+
+        // Copy file in chunks
+        const size_t BUFFER_SIZE = 8192;
+        uint8_t *buffer = (uint8_t *)malloc(BUFFER_SIZE);
+        if (!buffer)
+        {
+          logmsg("Kiosk restore: ERROR - Failed to allocate copy buffer");
+          hda_dest.close();
+          file.close();
+          continue;
+        }
+
+        uint64_t bytes_copied = 0;
+        uint32_t last_progress_mb = 0;
+        bool copy_success = true;
+
+        file.rewind();
+        while (bytes_copied < ori_size && copy_success)
+        {
+          size_t to_read = (ori_size - bytes_copied > BUFFER_SIZE) ? BUFFER_SIZE : (ori_size - bytes_copied);
+          size_t bytes_read = file.read(buffer, to_read);
+
+          if (bytes_read != to_read)
+          {
+            logmsg("Kiosk restore: ERROR - Read failed at offset ", (int)(bytes_copied >> 20), " MB");
+            copy_success = false;
+            break;
+          }
+
+          size_t bytes_written = hda_dest.write(buffer, bytes_read);
+          if (bytes_written != bytes_read)
+          {
+            logmsg("Kiosk restore: ERROR - Write failed at offset ", (int)(bytes_copied >> 20), " MB");
+            copy_success = false;
+            break;
+          }
+
+          bytes_copied += bytes_read;
+
+          // Progress indicator every 10MB with LED state toggle
+          uint32_t progress_mb = (uint32_t)(bytes_copied >> 20);
+          if (progress_mb >= last_progress_mb + 10)
+          {
+            logmsg("Kiosk restore: Progress ", (int)progress_mb, " MB / ", (int)(ori_size >> 20), " MB");
+            last_progress_mb = progress_mb;
+          }
+
+          // Set LED based on current state with pattern [ON, OFF, ON, OFF, OFF]
+          int led_state = progress_mb % 5;
+          platform_write_led(led_state == 0 || led_state == 2);
+        }
+
+        free(buffer);
+        hda_dest.close();
+        LED_OFF();
+
+        uint32_t copy_time_ms = millis() - copy_start_time;
+        int copy_speed_kbps = copy_time_ms > 0 ? (int)((ori_size / 1024) / (copy_time_ms / 1000.0)) : 0;
+
+        if (copy_success && bytes_copied == ori_size)
+        {
+          logmsg("Kiosk restore: Successfully restored ", hda_name, " (", (int)(ori_size >> 20), " MB) in ", (int)copy_time_ms, " ms, ", copy_speed_kbps, " kB/s");
+          restored_count++;
+        }
+        else
+        {
+          logmsg("Kiosk restore: ERROR - Failed to restore ", hda_name, " after ", (int)copy_time_ms, " ms");
+          // Clean up partial file
+          SD.remove(hda_name);
+        }
+      }
+    }
+    file.close();
+  }
+  root.close();
+
+  if (restored_count > 0)
+  {
+    logmsg("Kiosk restore: Completed - restored ", restored_count, " disk image(s)");
+  }
+  else
+  {
+    logmsg("Kiosk restore: No images needed restoration");
   }
 }
