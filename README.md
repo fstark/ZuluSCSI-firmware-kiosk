@@ -1,23 +1,26 @@
-ZuluSCSI™ Firmware
-=================
+ZuluSCSI™ with Kiosk mode
+=========================
 
-This fork implements a Kiosk mode
----------------------------------
-The Kiosk mode is destined for vintage computer museums or other demonstration setups, where the machines can be used by visitors but should be restored to pristine state easily.
+This fork of ZuluSCSI™ implements a Kiosk mode
+----------------------------------------------
+The Kiosk mode is destined to vintage computer museums or other demonstration setups, where the machines can be used by visitors but should be restored into a pristine state easily.
 
-This is a simple implementation of the concept that overrides at startup all disks that have a corresponding ".ori" image of the same size.
+This is a simple implementation of the concept that overrides at startup all disks that have a corresponding ``.ori`` image of the same size.
 
-It takes a significant amount of time, so it should be used on small drives (for instance, it takes around 30 seconds to restore a 40MB hard drive on a ZuluSCSI Pico). During the copy, the pico light will blink with the pattern ON-OFF-ON-OFF-OFF. Each cycle corresponds to 5Mb restored.
+Restoration takes a significant amount of time, so it should be used on small drives (for instance, it takes around 30 seconds to restore a 40MB hard drive on a ZuluSCSI Pico). During the copy, the pico light will blink with the pattern ON-OFF-ON-OFF-OFF. Each cycle corresponds to 5Mb restored.
 
 How to use the Kiosk mode
 -------------------------
-Kiosk mode is enabled on a per-volume basis
-Take the image that you want to be restored at each boot.
-Duplicate it.
+Kiosk mode is enabled on a per-image basis
+Take the image that you want to be restored at each boot and duplicate it.
 Add an ``.ori`` extension, for *original*.
 At startup, this original file will be copied onto the file.
-(``HD10_512.hda.ori`` -> ``HD10_512.hda``). The original file *must* exist and have the *exact same size*.
+For instamce ``HD10_512.hda.ori`` would be copied onyo ``HD10_512.hda``.
+The destination file *must* exist and have the *exact same size*, to reduce potential for errors or disk fragmentation.
 Rebooting the machine will not restore the file, you need to physically power-cycle the Zulu.
+
+ZuluSCSI™ Firmware
+=================
 
 Hard Drive & ISO image files
 ---------------------
