@@ -1,6 +1,23 @@
 ZuluSCSI™ Firmware
 =================
 
+This fork is to implement a Kiosk mode
+--------------------------------------
+The Kiosk mode is destined for vintage computer museums or other demonstration setups, where the machines can be used by visitors but should be restored to pristine state easily.
+
+This is a simple implementation of the concept that overrides at startup all disks that have a corresponding ".ori" image of the same size.
+
+It takes a significant amount of time, so it should be used on small drives (for instance, it takes around 30 seconds to restore a 40MB hard drive on a ZuluSCSI Pico). During the copy, the pico light will blink with the pattern ON-OFF-ON-OFF-OFF. Each cycle corresponds to 5Mb restored.
+
+How to use the Kiosk mode
+-------------------------
+Kiosk mode is enabled on a per-volume basis
+Take the image that you want to be restored at each boot.
+Duplicate it.
+**Add** a ``.ori``` extension, for *original*.
+At startup, this original file will be copied onto the file.
+Rebooting the machine will not restore the file, you need to physically power-cycle the Zulu.
+
 Hard Drive & ISO image files
 ---------------------
 ZuluSCSI uses raw hard drive image files, which are stored on a FAT32 or exFAT-formatted SD card. These are often referred to as "hda" files.
