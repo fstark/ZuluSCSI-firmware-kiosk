@@ -14,8 +14,9 @@ How to use the Kiosk mode
 Kiosk mode is enabled on a per-volume basis
 Take the image that you want to be restored at each boot.
 Duplicate it.
-**Add** a ``.ori``` extension, for *original*.
+Add an ``.ori``` extension, for *original*.
 At startup, this original file will be copied onto the file.
+(``HD10_512.hda.ori`` -> ``HD10_512.hda``)
 Rebooting the machine will not restore the file, you need to physically power-cycle the Zulu.
 
 Hard Drive & ISO image files
