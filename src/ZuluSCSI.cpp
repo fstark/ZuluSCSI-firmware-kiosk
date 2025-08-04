@@ -1112,7 +1112,7 @@ static void zuluscsi_setup_sd_card(bool wait_for_card = true)
 extern "C" void zuluscsi_setup(void)
 {
   platform_init();
-  logmsg("Kiosk version");
+  logmsg("Kiosk version 0.2");
   platform_late_init();
 
   bool is_initiator = false;
